@@ -1,46 +1,39 @@
-import base64
-
 from django.contrib.auth import get_user_model
-from django.core.files.base import ContentFile
 from djoser.serializers import UserSerializer, UserCreateSerializer
-from rest_framework import serializers
+from rest_framework.serializers import (SerializerMethodField,
+                                        PrimaryKeyRelatedField,
+                                        Serializer)
 
+from backend.utils import Base64ImageField
 
 User = get_user_model()
 
 
-class CustomUserMixin:
+class UserMixin:
     class Meta:
         fields = ('email', 'id', 'username', 'first_name', 'last_name')
 
 
-class CustomUserSerializer(UserSerializer):
-    is_subscribed = serializers.SerializerMethodField()
+class UserSerializer(UserSerializer):
+    is_subscribed = SerializerMethodField()
 
     class Meta(UserSerializer.Meta):
-        fields = CustomUserMixin.Meta.fields + ('is_subscribed', 'avatar')
+        fields = UserMixin.Meta.fields + ('is_subscribed', 'avatar')
 
     def get_is_subscribed(self, obj):
         user = self.context.get('request').user
-        return False if (
-            user.is_anonymous or obj not in user.subscription.all()) else True
+        return (
+            True if not user.is_anonymous
+            and obj in user.subscription.all()
+            else False
+        )
 
 
-class CustomUserCreateSerializer(UserCreateSerializer):
+class UserCreateSerializer(UserCreateSerializer):
 
     class Meta:
         model = User
-        fields = CustomUserMixin.Meta.fields + ('password',)
-
-
-class Base64ImageField(serializers.ImageField):
-    def to_internal_value(self, data):
-        if isinstance(data, str) and data.startswith('data:image'):
-            format, imgstr = data.split(';base64,')
-            ext = format.split('/')[-1]  
-            data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
-
-        return super().to_internal_value(data)
+        fields = UserMixin.Meta.fields + ('password',)
 
 
 class AvatarSerialaizer(UserSerializer):
@@ -55,13 +48,25 @@ class AvatarSerialaizer(UserSerializer):
         return instance
 
 
-class SubscriptionsSerialaizer(UserSerializer):
-    subscription = serializers.StringRelatedField(many=True, read_only=True)
+class RecipeSubscrubeSerializer(Serializer):
+    name = PrimaryKeyRelatedField(read_only=True)
+    id = PrimaryKeyRelatedField(read_only=True)
+    cooking_time = PrimaryKeyRelatedField(read_only=True)
+    image = Base64ImageField(required=True, allow_null=True)
+
+
+class SubscribedUserSerialaizer(UserSerializer):
+    avatar = Base64ImageField(required=True, allow_null=True)
+    recipes = RecipeSubscrubeSerializer(many=True, read_only=True)
+    recipes_count = SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ('subscription',)
+        fields = UserSerializer.Meta.fields + (
+            'recipes', 'recipes_count', 'avatar')
 
+    def get_recipes(self, obj):
+        return obj.recipes.all()
 
-class SubscribeSerialaizer(UserSerializer):
-    pass
+    def get_recipes_count(self, obj):
+        return obj.recipes.count()

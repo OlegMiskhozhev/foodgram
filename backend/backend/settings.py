@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'djoser',
+    'django_filters',
     'api',
     'recipes',
     'users'
@@ -119,19 +120,18 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
     ],
-    'DEFAULT_PAGINATION_CLASS': 'backend.paginations.CustomPagination'
 }
 
 
 DJOSER = {
     'LOGIN_FIELD': 'email',
     'SERIALIZERS': {
-        'user': 'users.serializers.CustomUserSerializer',
-        'user_create': 'users.serializers.CustomUserCreateSerializer',
-        'current_user': 'users.serializers.CustomUserSerializer',
+        'user': 'users.serializers.UserSerializer',
+        'user_create': 'users.serializers.UserCreateSerializer',
+        'current_user': 'users.serializers.UserSerializer',
         'avatar': 'users.serializers.AvatarSerialaizer',
-        'subscriptions': 'users.serializers.SubscriptionsSerialaizer',
-        'subscribe': 'users.serializers.SubscribeSerialaizer',
+        'subscriptions': 'users.serializers.SubscribedUserSerialaizer',
+        'subscribe': 'users.serializers.SubscribedUserSerialaizer',
     },
     'PERMISSIONS': {
         'user': ['rest_framework.permissions.AllowAny'],
@@ -139,7 +139,7 @@ DJOSER = {
         'me': ['djoser.permissions.CurrentUserOrAdmin'],
         'avatar': ['djoser.permissions.CurrentUserOrAdmin'],
         'subscriptions': ['djoser.permissions.CurrentUserOrAdmin'],
-        'subscribe': ['djoser.permissions.CurrentUserOrAdmin']
+        'subscribe': ['rest_framework.permissions.IsAuthenticated']
     },
     'HIDE_USERS': False,
 }

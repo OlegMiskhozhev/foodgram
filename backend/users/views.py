@@ -1,35 +1,35 @@
 from django.contrib.auth import get_user_model
-
+from djoser.conf import settings
+from djoser.views import UserViewSet
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from djoser.conf import settings
-from djoser.views import UserViewSet
-
+from backend.paginations import Pagination
 
 User = get_user_model()
 
 
 class CustomUserViewSet(UserViewSet):
+    pagination_class = Pagination
 
     def get_permissions(self):
         if self.action == 'me':
             self.permission_classes = settings.PERMISSIONS.me
-        if self.action == 'avatar':
+        elif self.action == 'avatar':
             self.permission_classes = settings.PERMISSIONS.avatar
-        if self.action == 'subscriptions':
+        elif self.action == 'subscriptions':
             self.permission_classes = settings.PERMISSIONS.subscriptions
-        if self.action == 'subscribe':
+        elif self.action == 'subscribe':
             self.permission_classes = settings.PERMISSIONS.subscribe
         return super().get_permissions()
 
     def get_serializer_class(self):
         if self.action == 'avatar':
             return settings.SERIALIZERS.avatar
-        if self.action == 'subscriptions':
+        elif self.action == 'subscriptions':
             return settings.SERIALIZERS.subscriptions
-        if self.action == 'subscribe':
+        elif self.action == 'subscribe':
             return settings.SERIALIZERS.subscribe
         return super().get_serializer_class()
 
@@ -49,16 +49,28 @@ class CustomUserViewSet(UserViewSet):
 
     @action(('GET',), detail=False)
     def subscriptions(self, request, *args, **kwargs):
-        instance = request.user
+        instance = request.user.subscription.all()
+        page = self.paginate_queryset(instance)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(instance=instance)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(('POST', 'DELETE',), detail=True)
     def subscribe(self, request, *args, **kwargs):
         subscribe_user = self.get_object()
+        subscriptions = request.user.subscription
+        if subscribe_user == request.user:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
         if request.method == 'POST':
-            request.user.subscription.add(subscribe_user)
-            return Response(status=status.HTTP_200_OK)
+            if subscribe_user in subscriptions.all():
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+            subscriptions.add(subscribe_user)
+            serializer = self.get_serializer(instance=subscribe_user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         elif request.method == 'DELETE':
-            request.user.subscription.remove(subscribe_user)
+            if subscribe_user not in subscriptions.all():
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+            subscriptions.remove(subscribe_user)
             return Response(status=status.HTTP_204_NO_CONTENT)

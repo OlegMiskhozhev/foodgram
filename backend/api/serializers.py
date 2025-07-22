@@ -6,6 +6,7 @@ from rest_framework.serializers import (IntegerField,
 from backend.utils import Base64ImageField
 from recipes.models import (Favorite,
                             Ingredient,
+                            Link,
                             Recipe,
                             RecipeIngredient,
                             ShoppingCart,
@@ -179,3 +180,15 @@ class ActionSerializer(ModelSerializer):
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
+
+
+class LinkSerializer(ModelSerializer):
+
+    class Meta:
+        model = Link
+        fields = ('short_link',)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        representation = {'short-link': data['short_link']}
+        return representation

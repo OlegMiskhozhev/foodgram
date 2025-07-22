@@ -6,6 +6,7 @@ from rest_framework.serializers import (SerializerMethodField,
 
 from backend.utils import Base64ImageField
 
+
 User = get_user_model()
 
 
@@ -56,17 +57,22 @@ class RecipeSubscrubeSerializer(Serializer):
 
 
 class SubscribedUserSerialaizer(UserSerializer):
-    avatar = Base64ImageField(required=True, allow_null=True)
-    recipes = RecipeSubscrubeSerializer(many=True, read_only=True)
+    recipes = SerializerMethodField()
     recipes_count = SerializerMethodField()
 
     class Meta:
         model = User
         fields = UserSerializer.Meta.fields + (
-            'recipes', 'recipes_count', 'avatar')
+            'recipes', 'recipes_count')
 
     def get_recipes(self, obj):
-        return obj.recipes.all()
+        request = self.context.get('request')
+        limit = request.query_params.get('recipes_limit')
+        if limit:
+            limit = int(limit)
+        queryset = obj.recipes.all()
+        serializer = RecipeSubscrubeSerializer(queryset[:limit], many=True)
+        return serializer.data
 
     def get_recipes_count(self, obj):
         return obj.recipes.count()

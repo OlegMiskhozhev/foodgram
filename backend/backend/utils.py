@@ -1,7 +1,11 @@
 import base64
 
+from random import choice
+
 from django.core.files.base import ContentFile
 from rest_framework import serializers
+
+from backend.constants import SYMBOLS
 
 
 def create_shopping_cart(recipe_list):
@@ -21,6 +25,13 @@ def create_shopping_cart(recipe_list):
         shopping_cart += (
             f'\t\N{BULLET} {ingredient[0]} ({ingredient[-1]}) - {amount}\n')
     return shopping_cart
+
+
+def create_short_link(url):
+    short_link = url.split('api')[0]
+    for _ in range(5):
+        short_link += choice(SYMBOLS)
+    return short_link
 
 
 class Base64ImageField(serializers.ImageField):

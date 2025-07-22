@@ -119,3 +119,8 @@ class ShoppingCart(ActionModel):
 
     class Meta:
         default_related_name = 'shopping_cart'
+
+
+class Link(models.Model):
+    url = models.URLField()
+    short_link = models.URLField()

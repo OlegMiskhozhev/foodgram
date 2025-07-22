@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.contrib.auth import get_user_model
 from recipes.models import (Ingredient,
                             Favorite,
+                            Link,
                             Recipe,
                             RecipeIngredient,
                             ShoppingCart,
@@ -70,4 +71,12 @@ class ShoppingCartAdmin(admin.ModelAdmin):
     list_display = (
         'id',
         'holder'
+    )
+
+@admin.register(Link)
+class LinkAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'url',
+        'short_link'
     )

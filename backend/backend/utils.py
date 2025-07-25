@@ -1,5 +1,4 @@
 import base64
-
 from random import choice
 
 from django.core.files.base import ContentFile
@@ -23,12 +22,13 @@ def create_shopping_cart(recipe_list):
     shopping_cart = 'Список покупок:\n\n'
     for ingredient, amount in ingredients_list.items():
         shopping_cart += (
-            f'\t\N{BULLET} {ingredient[0]} ({ingredient[-1]}) - {amount}\n')
+            f'  \N{BULLET} {ingredient[0]} ({ingredient[-1]}) - {amount}\n')
     return shopping_cart
 
 
-def create_short_link(url):
-    short_link = url.split('api')[0]
+def create_short_link(request_url):
+    url = request_url.split('api/')
+    short_link = url[0] + 's/'
     for _ in range(5):
         short_link += choice(SYMBOLS)
     return short_link

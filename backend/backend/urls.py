@@ -21,5 +21,5 @@ from api.views import redirection
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
-    re_path(r'^[a-zA-Z0-9]+$', redirection)
+    re_path(r's/', redirection)
 ]

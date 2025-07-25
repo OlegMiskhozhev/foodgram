@@ -1,18 +1,10 @@
-from rest_framework.serializers import (IntegerField,
-                                        ModelSerializer,
-                                        SerializerMethodField,
-                                        ValidationError)
+from recipes.models import (Favorite, Ingredient, Link, Recipe,
+                            RecipeIngredient, ShoppingCart, Tag)
+from rest_framework.serializers import (IntegerField, ModelSerializer,
+                                        SerializerMethodField, ValidationError)
+from users.serializers import UserSerializer
 
 from backend.utils import Base64ImageField
-from recipes.models import (Favorite,
-                            Ingredient,
-                            Link,
-                            Recipe,
-                            RecipeIngredient,
-                            ShoppingCart,
-                            Tag)
-
-from users.serializers import UserSerializer
 
 
 class TagSerializer(ModelSerializer):
@@ -138,7 +130,7 @@ class RecipeSerializer(ModelSerializer):
     def validate_ingredients(self, value):
         self.check_tags_ingredients(Ingredient, value)
         return value
-    
+
     def add_ingredients(self, recipe, ingredients):
         for item in ingredients:
             ingredient = Ingredient.objects.get(id=item.get('id'))
@@ -157,7 +149,7 @@ class RecipeSerializer(ModelSerializer):
         ingredients = validated_data.pop('recipeingredients')
         tags = validated_data.pop('tags')
         recipe = Recipe.objects.create(**validated_data)
-        self.add_tags(recipe, ingredients)
+        self.add_ingredients(recipe, ingredients)
         self.add_tags(recipe, tags)
         return recipe
 
@@ -167,11 +159,13 @@ class RecipeSerializer(ModelSerializer):
         instance.text = validated_data.get('text')
         instance.cooking_time = validated_data.get('cooking_time')
         instance.ingredients.clear()
+        instance.tags.clear()
+        instance.save()
         ingredients = validated_data.get('recipeingredients')
         self.add_ingredients(instance, ingredients)
-        instance.tags.clear()
         tags = validated_data.get('tags')
         self.add_tags(instance, tags)
+
         return instance
 
 

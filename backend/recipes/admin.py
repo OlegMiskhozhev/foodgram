@@ -1,12 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth import get_user_model
-from recipes.models import (Ingredient,
-                            Favorite,
-                            Link,
-                            Recipe,
-                            RecipeIngredient,
-                            ShoppingCart,
-                            Tag)
+from recipes.models import (Favorite, Ingredient, Link, Recipe,
+                            RecipeIngredient, ShoppingCart, Tag)
 
 User = get_user_model()
 
@@ -21,12 +16,12 @@ class UserAdmin(admin.ModelAdmin):
         'last_name',
         'avatar',
     )
+    search_fields = ('username', 'email',)
 
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
     list_display = (
-        'id',
         'name',
         'slug'
     )
@@ -35,48 +30,62 @@ class TagAdmin(admin.ModelAdmin):
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
     list_display = (
-        'id',
         'name',
         'measurement_unit'
     )
-
-
-@admin.register(Recipe)
-class RecipeAdmin(admin.ModelAdmin):
-    list_display = (
-        'id',
-        'name',
-        'author'
-    )
-
-
-@admin.register(Favorite)
-class FavoriteAdmin(admin.ModelAdmin):
-    list_display = (
-        'id',
-        'holder',
-    )
+    search_fields = ('name',)
 
 
 @admin.register(RecipeIngredient)
 class RecipeIngredientAdmin(admin.ModelAdmin):
     list_display = (
         'id',
+        'recipe',
+        'ingredient',
         'amount'
+    )
+
+
+class IngredientsInline(admin.StackedInline):
+    model = RecipeIngredient
+    extra = 0
+
+
+@admin.register(Recipe)
+class RecipeAdmin(admin.ModelAdmin):
+    inlines = (
+        IngredientsInline,
+    )
+    list_display = (
+        'name',
+        'author',
+        'cooking_time',
+        'favorite_count'
+    )
+    search_fields = ('name', 'author__username')
+    list_filter = ('tags',)
+
+    def favorite_count(self, obj):
+        return Favorite.objects.filter(recipes=obj).count()
+
+
+@admin.register(Favorite)
+class FavoriteAdmin(admin.ModelAdmin):
+    list_display = (
+        'holder',
     )
 
 
 @admin.register(ShoppingCart)
 class ShoppingCartAdmin(admin.ModelAdmin):
     list_display = (
-        'id',
-        'holder'
+        'holder',
     )
+
 
 @admin.register(Link)
 class LinkAdmin(admin.ModelAdmin):
     list_display = (
-        'id',
         'url',
         'short_link'
     )

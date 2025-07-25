@@ -1,7 +1,7 @@
-from django_filters.rest_framework import CharFilter, FilterSet
+from django_filters.rest_framework import (CharFilter, FilterSet,
+                                           ModelMultipleChoiceFilter)
+from recipes.models import Favorite, ShoppingCart, Tag
 from rest_framework.filters import BaseFilterBackend
-
-from recipes.models import Favorite, ShoppingCart
 
 
 class FavoriteShoppingCartFilter(BaseFilterBackend):
@@ -26,5 +26,9 @@ class IngredientFilter(FilterSet):
 
 
 class RecipeFilter(FilterSet):
-    author = CharFilter(field_name='author__id', lookup_expr='exact')
-    # tags = CharFilter(field_name='tags__slug', lookup_expr='icontains')
+    author = CharFilter(field_name='author__id')
+    tags = ModelMultipleChoiceFilter(
+        queryset=Tag.objects.all(),
+        field_name='tags__slug',
+        to_field_name='slug'
+    )

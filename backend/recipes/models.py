@@ -40,6 +40,13 @@ class Ingredient(models.Model):
         max_length=constants.MEASUREMENT_UNIT_LENGTH,
     )
 
+    class Meta:
+        verbose_name = 'ингредиент'
+        verbose_name_plural = 'Ингредиенты'
+
+    def __str__(self):
+        return self.name
+
 
 class Recipe(models.Model):
 
@@ -73,6 +80,17 @@ class Recipe(models.Model):
         on_delete=models.CASCADE,
         related_name='recipes'
     )
+    pub_date = models.DateTimeField(
+        'Дата публикации', auto_now_add=True
+    )
+
+    class Meta:
+        verbose_name = 'рецепт'
+        verbose_name_plural = 'Рецепты'
+        ordering = ('-pub_date',)
+
+    def __str__(self):
+        return self.name
 
 
 class RecipeIngredient(models.Model):
@@ -90,7 +108,12 @@ class RecipeIngredient(models.Model):
     amount = models.PositiveSmallIntegerField('Количество')
 
     class Meta:
+        verbose_name = 'ингредиенты рецепта'
+        verbose_name_plural = 'Ингредиенты рецептов'
         default_related_name = 'recipeingredients'
+
+    def __str__(self):
+        return self.recipe.name
 
 
 class ActionModel(models.Model):
@@ -112,15 +135,30 @@ class ActionModel(models.Model):
 class Favorite(ActionModel):
 
     class Meta:
-        default_related_name = 'favorites'
+        verbose_name = 'избранное'
+        verbose_name_plural = 'Избранное'
+
+    def __str__(self):
+        return self.holder.username
 
 
 class ShoppingCart(ActionModel):
 
     class Meta:
-        default_related_name = 'shopping_cart'
+        verbose_name = 'список покупок'
+        verbose_name_plural = 'Списки покупок'
+
+    def __str__(self):
+        return self.holder.username
 
 
 class Link(models.Model):
     url = models.URLField()
     short_link = models.URLField()
+
+    class Meta:
+        verbose_name = 'ссылки'
+        verbose_name_plural = 'Ссылки'
+
+    def __str__(self):
+        return self.holder.username

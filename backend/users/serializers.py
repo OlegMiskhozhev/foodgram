@@ -1,11 +1,9 @@
 from django.contrib.auth import get_user_model
-from djoser.serializers import UserSerializer, UserCreateSerializer
-from rest_framework.serializers import (SerializerMethodField,
-                                        PrimaryKeyRelatedField,
-                                        Serializer)
+from djoser.serializers import UserCreateSerializer, UserSerializer
+from rest_framework.serializers import (PrimaryKeyRelatedField, Serializer,
+                                        SerializerMethodField)
 
 from backend.utils import Base64ImageField
-
 
 User = get_user_model()
 

@@ -10,7 +10,10 @@ VALIDE_RECIPE_DATA = {
         {'id': 2, 'amount': 200}
     ],
     'tags': [1, 2],
-    'image': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAgMAAABieywaAAAACVBMVEUAAAD///9fX1/S0ecCAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAACklEQVQImWNoAAAAggCByxOyYQAAAABJRU5ErkJggg==',
+    'image': ('data:image/png;base64,'
+              'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAgMAAABieywaAAAACVBMVEUAAAD'
+              '///9fX1/S0ecCAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAACklEQVQ'
+              'ImWNoAAAAggCByxOyYQAAAABJRU5ErkJggg=='),
     'name': 'recipe',
     'text': 'description',
     'cooking_time': 20

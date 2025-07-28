@@ -6,6 +6,7 @@ from backend import constants
 
 
 class User(AbstractUser):
+    """Модель для пользователей"""
     first_name = models.CharField(
         _('first name'),
         max_length=constants.USER_NAME_LENGTH

@@ -9,17 +9,21 @@ User = get_user_model()
 
 
 class UserMixin:
+    """Миксин сериализаторов модели пользователей."""
     class Meta:
         fields = ('email', 'id', 'username', 'first_name', 'last_name')
 
 
 class UserSerializer(UserSerializer):
+    """Сериализатор для модели пользователей."""
     is_subscribed = SerializerMethodField()
 
     class Meta(UserSerializer.Meta):
         fields = UserMixin.Meta.fields + ('is_subscribed', 'avatar')
 
     def get_is_subscribed(self, obj):
+        """Проверяет наличие пользователя в списке подписок
+        текущего пользователя."""
         user = self.context.get('request').user
         return (
             True if not user.is_anonymous
@@ -29,25 +33,28 @@ class UserSerializer(UserSerializer):
 
 
 class UserCreateSerializer(UserCreateSerializer):
-
+    """Сериализатор для регистрации пользователей."""
     class Meta:
         model = User
         fields = UserMixin.Meta.fields + ('password',)
 
 
 class AvatarSerialaizer(UserSerializer):
+    """Сериализатор для добавления и удаления аватара пользователя."""
     avatar = Base64ImageField(required=True, allow_null=True)
 
     class Meta(UserSerializer.Meta):
         fields = ('avatar',)
 
     def update(self, instance, validated_data):
+        """Обновляет аватар пользователя."""
         instance.avatar = validated_data.get('avatar')
         instance.save()
         return instance
 
 
 class RecipeSubscrubeSerializer(Serializer):
+    """Сериализатор для списка рецептов подписываемого пользователя."""
     name = PrimaryKeyRelatedField(read_only=True)
     id = PrimaryKeyRelatedField(read_only=True)
     cooking_time = PrimaryKeyRelatedField(read_only=True)
@@ -55,6 +62,7 @@ class RecipeSubscrubeSerializer(Serializer):
 
 
 class SubscribedUserSerialaizer(UserSerializer):
+    """Сериализатор для подписки на пользователя."""
     recipes = SerializerMethodField()
     recipes_count = SerializerMethodField()
 
@@ -64,6 +72,7 @@ class SubscribedUserSerialaizer(UserSerializer):
             'recipes', 'recipes_count')
 
     def get_recipes(self, obj):
+        """Возвращает список рецептов пользователя."""
         request = self.context.get('request')
         limit = request.query_params.get('recipes_limit')
         if limit:
@@ -73,4 +82,5 @@ class SubscribedUserSerialaizer(UserSerializer):
         return serializer.data
 
     def get_recipes_count(self, obj):
+        """Возвращает количество рецептов пользователя."""
         return obj.recipes.count()

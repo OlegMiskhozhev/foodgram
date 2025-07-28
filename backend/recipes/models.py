@@ -8,7 +8,7 @@ User = get_user_model()
 
 
 class Tag(models.Model):
-
+    """Модель для тегов."""
     name = models.CharField(
         'Название',
         max_length=constants.TAG_LENGTH,
@@ -30,7 +30,7 @@ class Tag(models.Model):
 
 
 class Ingredient(models.Model):
-
+    """Модель для ингредиентов."""
     name = models.CharField(
         'Название',
         max_length=constants.INGREDIENT_NAME_LENGTH,
@@ -49,7 +49,7 @@ class Ingredient(models.Model):
 
 
 class Recipe(models.Model):
-
+    """Модель для рецептов."""
     name = models.CharField(
         'Название',
         max_length=constants.RECIPE_NAME_LENGTH
@@ -94,7 +94,7 @@ class Recipe(models.Model):
 
 
 class RecipeIngredient(models.Model):
-
+    """Модель для связи ингредиентов с рецептами."""
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
@@ -117,7 +117,7 @@ class RecipeIngredient(models.Model):
 
 
 class ActionModel(models.Model):
-
+    """Базовая модель для списков подписок и покупок."""
     holder = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
@@ -133,7 +133,7 @@ class ActionModel(models.Model):
 
 
 class Favorite(ActionModel):
-
+    """Модель для списков подписок."""
     class Meta:
         verbose_name = 'избранное'
         verbose_name_plural = 'Избранное'
@@ -143,16 +143,18 @@ class Favorite(ActionModel):
 
 
 class ShoppingCart(ActionModel):
-
+    """Модель для списков покупок."""
     class Meta:
         verbose_name = 'список покупок'
         verbose_name_plural = 'Списки покупок'
+        default_related_name = 'shopping_cart'
 
     def __str__(self):
         return self.holder.username
 
 
 class Link(models.Model):
+    """Модель для коротких ссылок на рецепты."""
     url = models.URLField()
     short_link = models.URLField()
 

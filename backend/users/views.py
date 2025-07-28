@@ -11,9 +11,11 @@ User = get_user_model()
 
 
 class CustomUserViewSet(UserViewSet):
+    """Представление для обработки запросов к модели пользователей."""
     pagination_class = Pagination
 
     def get_permissions(self):
+        """Устанавливает разрешения в зависимости от выполняемого действия."""
         if self.action == 'me':
             self.permission_classes = settings.PERMISSIONS.me
         elif self.action == 'avatar':
@@ -25,6 +27,8 @@ class CustomUserViewSet(UserViewSet):
         return super().get_permissions()
 
     def get_serializer_class(self):
+        """Устанавливает сериализатор в зависимости
+        от выполняемого действия."""
         if self.action == 'avatar':
             return settings.SERIALIZERS.avatar
         elif self.action == 'subscriptions':
@@ -35,6 +39,7 @@ class CustomUserViewSet(UserViewSet):
 
     @action(('PUT', 'DELETE',), detail=True, lookup_field='me')
     def avatar(self, request, *args, **kwargs):
+        """Присваивает и удаляет аватар пользователя."""
         instance = request.user
         if request.method == 'PUT':
             serializer = self.get_serializer(
@@ -49,6 +54,7 @@ class CustomUserViewSet(UserViewSet):
 
     @action(('GET',), detail=False)
     def subscriptions(self, request, *args, **kwargs):
+        """Возвращает список подписок текущего пользователя."""
         instance = request.user.subscription.all()
         page = self.paginate_queryset(instance)
         if page is not None:
@@ -59,6 +65,8 @@ class CustomUserViewSet(UserViewSet):
 
     @action(('POST', 'DELETE',), detail=True)
     def subscribe(self, request, *args, **kwargs):
+        """Обрабатывает запросы на подписку и удаление подписки
+        текущего пользователя."""
         subscribe_user = self.get_object()
         subscriptions = request.user.subscription
         if subscribe_user == request.user:

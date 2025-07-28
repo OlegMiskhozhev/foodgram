@@ -8,6 +8,7 @@ from backend.utils import Base64ImageField
 
 
 class TagSerializer(ModelSerializer):
+    """Сериализатор для модели Tag."""
     id = IntegerField()
 
     class Meta:
@@ -17,13 +18,14 @@ class TagSerializer(ModelSerializer):
 
 
 class IngredientSerializer(ModelSerializer):
-
+    """Сериализатор для модели Ingredient."""
     class Meta:
         model = Ingredient
         fields = ('__all__')
 
 
 class RecipeIngredientSerializer(ModelSerializer):
+    """Сериализатор для модели RecipeIngredient."""
     id = IntegerField(write_only=True)
 
     class Meta:
@@ -32,6 +34,7 @@ class RecipeIngredientSerializer(ModelSerializer):
         depth = 1
 
     def to_representation(self, instance):
+        """Изменяет вывод данных для поля ingredients рецепта."""
         data = super().to_representation(instance)
         representation = {
             'id': data['ingredient']['id'],
@@ -42,6 +45,7 @@ class RecipeIngredientSerializer(ModelSerializer):
         return representation
 
     def validate_amount(self, value):
+        """Проверяет соответствие данных поля amount требованиями проекта."""
         if value < 1:
             raise ValidationError(
                 'Количество должно быть больше либо равно 1.')
@@ -49,6 +53,7 @@ class RecipeIngredientSerializer(ModelSerializer):
 
 
 class RecipeSerializer(ModelSerializer):
+    """Сериализатор для модели Recipe."""
     image = Base64ImageField(required=True, allow_null=True)
     is_favorited = SerializerMethodField()
     is_in_shopping_cart = SerializerMethodField()
@@ -74,6 +79,8 @@ class RecipeSerializer(ModelSerializer):
         depth = 1
 
     def check_favorite_shopping_cart(self, model, obj):
+        """Проверяет входит ли рецепт в список избранного
+        или в спискок покупок текущего пользователя"""
         user = self.context.get('request').user
         if not user.is_anonymous:
             field, _ = model.objects.get_or_create(holder=user)
@@ -82,12 +89,15 @@ class RecipeSerializer(ModelSerializer):
         return True if obj in field.recipes.all() else False
 
     def get_is_favorited(self, obj):
+        """Формирует данные для поля is_favorited."""
         return self.check_favorite_shopping_cart(Favorite, obj)
 
     def get_is_in_shopping_cart(self, obj):
+        """Формирует данные для поля is_in_shopping_cart."""
         return self.check_favorite_shopping_cart(ShoppingCart, obj)
 
     def to_internal_value(self, data):
+        """Преобразует входящие данные поля tags под формат модели Tag."""
         tags = data.get('tags')
         if tags:
             tags_obj = []
@@ -97,6 +107,8 @@ class RecipeSerializer(ModelSerializer):
         return super().to_internal_value(data)
 
     def validate(self, attrs):
+        """Проверяет обязательное наличие полей в запросе.
+        Требуется для частичного обновления объекта модели Recipe."""
         if not attrs.get('recipeingredients'):
             raise ValidationError({'ingredients': 'Обязательное поле.'})
         if not attrs.get('tags'):
@@ -110,6 +122,9 @@ class RecipeSerializer(ModelSerializer):
         return super().validate(attrs)
 
     def check_tags_ingredients(self, model, value):
+        """Проверяет, что список тегов не пустой,
+        содержит существующие тэги/ингредиенты,
+        не содержит повторяющиеся элементы."""
         if not len(value):
             raise ValidationError('Поле не должно быть пустым.')
         objects = set()
@@ -124,14 +139,18 @@ class RecipeSerializer(ModelSerializer):
             raise ValidationError('Повторы не допустимы.')
 
     def validate_tags(self, value):
+        """Проверят соответствие данных поля tags требованиям проекта."""
         self.check_tags_ingredients(Tag, value)
         return value
 
     def validate_ingredients(self, value):
+        """Проверят соответствие данных
+        поля ingredients требованиям проекта."""
         self.check_tags_ingredients(Ingredient, value)
         return value
 
     def add_ingredients(self, recipe, ingredients):
+        """Добавляет ингредиенты с указанием количества в рецепт."""
         for item in ingredients:
             ingredient = Ingredient.objects.get(id=item.get('id'))
             RecipeIngredient.objects.create(
@@ -141,11 +160,13 @@ class RecipeSerializer(ModelSerializer):
             )
 
     def add_tags(self, recipe, tags):
+        """Добавляет теги в рецепт."""
         for item in tags:
             tag = Tag.objects.get(id=item.get('id'))
             recipe.tags.add(tag)
 
     def create(self, validated_data):
+        """Создает объект модели Recipe."""
         ingredients = validated_data.pop('recipeingredients')
         tags = validated_data.pop('tags')
         recipe = Recipe.objects.create(**validated_data)
@@ -154,6 +175,7 @@ class RecipeSerializer(ModelSerializer):
         return recipe
 
     def update(self, instance, validated_data):
+        """Обновляет объект модели Recipe."""
         instance.image = validated_data.get('image', instance.image)
         instance.name = validated_data.get('name')
         instance.text = validated_data.get('text')
@@ -170,19 +192,21 @@ class RecipeSerializer(ModelSerializer):
 
 
 class ActionSerializer(ModelSerializer):
-
+    """Сериализатор для вывода данных при выполнении действий
+    по добалению рецепта в список избранного или в список покупок."""
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
 
 
 class LinkSerializer(ModelSerializer):
-
+    """Сериализатор для вывода данных при запросе короткой ссылки."""
     class Meta:
         model = Link
         fields = ('short_link',)
 
     def to_representation(self, instance):
+        """Формирует данные для вывода поля short-link."""
         data = super().to_representation(instance)
         representation = {'short-link': data['short_link']}
         return representation

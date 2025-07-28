@@ -8,6 +8,7 @@ from backend.constants import SYMBOLS
 
 
 def create_shopping_cart(recipe_list):
+    """Формирует список покупок в текстовом формате."""
     ingredients_list = {}
     for recipe in recipe_list:
         ingredients = recipe.recipeingredients.all()
@@ -27,6 +28,7 @@ def create_shopping_cart(recipe_list):
 
 
 def create_short_link(request_url):
+    """Создает короткую ссылку на основе полного адреса."""
     url = request_url.split('api/')
     short_link = url[0] + 's/'
     for _ in range(5):
@@ -35,6 +37,7 @@ def create_short_link(request_url):
 
 
 class Base64ImageField(serializers.ImageField):
+    """Сериализатор для поля изображения."""
     def to_internal_value(self, data):
         if isinstance(data, str) and data.startswith('data:image'):
             format, imgstr = data.split(';base64,')

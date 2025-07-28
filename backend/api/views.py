@@ -20,11 +20,13 @@ from .serializers import (ActionSerializer, IngredientSerializer,
 
 
 class TagViewSet(ReadOnlyModelViewSet):
+    """Представление для работы с тегами."""
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
 
 
 class IngredientViewSet(ReadOnlyModelViewSet):
+    """Представление для работы с ингредиентами."""
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     filter_backends = (DjangoFilterBackend,)
@@ -32,6 +34,7 @@ class IngredientViewSet(ReadOnlyModelViewSet):
 
 
 class RecipeViewSet(ModelViewSet):
+    """Представление для работы с рецептами."""
     queryset = Recipe.objects.all()
     http_method_names = ('get', 'post', 'patch', 'delete')
     serializer_class = RecipeSerializer
@@ -43,6 +46,7 @@ class RecipeViewSet(ModelViewSet):
     search_fields = ('tags',)
 
     def get_permissions(self):
+        """Устанавлиевает разрешения в зависимости от действия."""
         if self.action in ('create', 'favorite', 'shopping_cart'):
             self.permission_classes = (IsAuthenticated,)
         elif self.action in ('partial_update', 'destroy'):
@@ -50,10 +54,14 @@ class RecipeViewSet(ModelViewSet):
         return super().get_permissions()
 
     def perform_create(self, serializer):
+        """Указывает текущего пользователя как автора при создании рецепта."""
         recipe = serializer.save(author=self.request.user)
         return recipe
 
     def process_action(self, recipe, model, request):
+        """Возвращает ответ при попытке добавить рецепт в список избранного
+        или в спискок покупок, в зависмости от того, находится ли рецепт
+        в соответствуюшем списке."""
         obj, _ = model.objects.get_or_create(holder=request.user)
         if request.method == 'POST':
             if recipe in obj.recipes.all():
@@ -69,16 +77,20 @@ class RecipeViewSet(ModelViewSet):
 
     @action(('POST', 'DELETE',), detail=True)
     def favorite(self, request, *args, **kwargs):
+        """Добавляет или удаляет рецепт в список избранного."""
         return self.process_action(self.get_object(), Favorite, request)
 
     @action(('POST', 'DELETE',), detail=True)
     def shopping_cart(self, request, *args, **kwargs):
+        """Добавляет или удаляет рецепт в список покупок."""
         return self.process_action(self.get_object(), ShoppingCart, request)
 
     @action(('GET',), detail=False)
     def download_shopping_cart(self, request, *args, **kwargs):
+        """Возвращает текстовый файл со списком покупок."""
         recipe_list = request.user.shopping_cart.recipes.all()
         shopping_cart = create_shopping_cart(recipe_list)
+        print(shopping_cart)
         response = FileResponse(shopping_cart, content_type='application/text')
         response['Content-Disposition'] = (
             'attachment; filename="shopping_cart.txt'
@@ -87,6 +99,7 @@ class RecipeViewSet(ModelViewSet):
 
     @action(('GET',), detail=True, url_path='get-link')
     def get_link(self, request, *args, **kwargs):
+        """Возвращвает короткую ссылку на рецепт."""
         request_url = request.build_absolute_uri().replace('get-link/', '')
         links = Link.objects.filter(url=request_url)
         if links.exists():
@@ -99,6 +112,7 @@ class RecipeViewSet(ModelViewSet):
 
 
 def redirection(request):
+    """Представление для обработки короткой ссылки на рецепт."""
     request_url = request.build_absolute_uri().replace('get-link/', '')
     try:
         links = Link.objects.get(short_link=request_url)

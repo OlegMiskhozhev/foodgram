@@ -13,7 +13,7 @@ class FavoriteShoppingCartFilter(BaseFilterBackend):
         favorite = request.query_params.get('is_favorited')
         shopping_cart = request.query_params.get('is_in_shopping_cart')
         if holder.is_anonymous:
-            return queryset.none()
+            return queryset
         if favorite:
             favorite_obj = Favorite.objects.get(holder=holder)
             return favorite_obj.recipes.all()

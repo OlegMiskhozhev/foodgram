@@ -15,7 +15,7 @@ services:
     env_file: .env
     image: olegmiskhozhev/foodgram_backend
     volumes:
-      - static:/backend_static/
+      - static:/backend_static
       - media:/app/media
     depends_on:
       - db
@@ -32,7 +32,7 @@ services:
     depends_on:
       - backend
     volumes:
-      - static:/staticfiles/
-      - media:/app/media/
+      - static:/app/static
+      - media:/app/media
     ports:
       - 8800:80

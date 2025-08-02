@@ -1,9 +1,11 @@
 from django.contrib.auth import get_user_model
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework.serializers import (PrimaryKeyRelatedField, Serializer,
-                                        SerializerMethodField)
+                                        SerializerMethodField, ValidationError)
 
 from backend.utils import Base64ImageField
+
+from .models import Subscription
 
 User = get_user_model()
 
@@ -11,7 +13,13 @@ User = get_user_model()
 class UserMixin:
     """Миксин сериализаторов модели пользователей."""
     class Meta:
-        fields = ('email', 'id', 'username', 'first_name', 'last_name')
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name'
+        )
 
 
 class UserSerializer(UserSerializer):
@@ -25,9 +33,11 @@ class UserSerializer(UserSerializer):
         """Проверяет наличие пользователя в списке подписок
         текущего пользователя."""
         user = self.context.get('request').user
+        if not user.is_anonymous:
+            subscription = user.subscriber.filter(subscribed_on=obj)
         return (
             True if not user.is_anonymous
-            and obj in user.subscription.all()
+            and subscription.exists()
             else False
         )
 
@@ -63,24 +73,34 @@ class RecipeSubscrubeSerializer(Serializer):
 
 class SubscribedUserSerialaizer(UserSerializer):
     """Сериализатор для подписки на пользователя."""
+    subscribed_on = UserSerializer(read_only=True)
     recipes = SerializerMethodField()
-    recipes_count = SerializerMethodField()
+    recipes_count = PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
-        model = User
-        fields = UserSerializer.Meta.fields + (
-            'recipes', 'recipes_count')
+        model = Subscription
+        fields = ('subscribed_on', 'recipes', 'recipes_count')
 
     def get_recipes(self, obj):
         """Возвращает список рецептов пользователя."""
         request = self.context.get('request')
         limit = request.query_params.get('recipes_limit')
         if limit:
-            limit = int(limit)
-        queryset = obj.recipes.all()
+            try:
+                limit = int(limit)
+            except Exception:
+                raise ValidationError('Некорректный запрос')
+        queryset = obj.subscribed_on.recipes.all()
         serializer = RecipeSubscrubeSerializer(queryset[:limit], many=True)
         return serializer.data
 
-    def get_recipes_count(self, obj):
-        """Возвращает количество рецептов пользователя."""
-        return obj.recipes.count()
+    def to_representation(self, instance):
+        """Изменяет вывод данных для запроса на подписку."""
+        data = super().to_representation(instance)
+        user = data.pop('subscribed_on')
+        recipes = data.pop('recipes')
+        recipes_count = data.pop('recipes_count')
+        data = user
+        data['recipes'] = recipes
+        data['recipes_count'] = recipes_count
+        return data

@@ -1,7 +1,8 @@
 from django_filters.rest_framework import (CharFilter, FilterSet,
                                            ModelMultipleChoiceFilter)
-from recipes.models import Favorite, ShoppingCart, Tag
 from rest_framework.filters import BaseFilterBackend
+
+from recipes.models import Tag
 
 
 class FavoriteShoppingCartFilter(BaseFilterBackend):
@@ -15,11 +16,15 @@ class FavoriteShoppingCartFilter(BaseFilterBackend):
         if holder.is_anonymous:
             return queryset
         if favorite:
-            favorite_obj = Favorite.objects.get(holder=holder)
-            return favorite_obj.recipes.all()
+            favorite_objects = holder.favorites.all()
+            favorite_recipes = [obj.recipe for obj in favorite_objects]
+            return favorite_recipes
         if shopping_cart:
-            shopping_cart_obj = ShoppingCart.objects.get(holder=holder)
-            return shopping_cart_obj.recipes.all()
+            shopping_cart_objects = holder.shopping_cart.all()
+            shopping_cart_recipes = [
+                obj.recipe for obj in shopping_cart_objects
+            ]
+            return shopping_cart_recipes
         return queryset
 
 

@@ -1,8 +1,6 @@
 from django.http import FileResponse, HttpResponse
 from django.shortcuts import redirect
 from django_filters.rest_framework import DjangoFilterBackend
-from recipes.models import (Favorite, Ingredient, Link, Recipe, ShoppingCart,
-                            Tag)
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
@@ -12,11 +10,14 @@ from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from backend.paginations import Pagination
 from backend.utils import create_shopping_cart, create_short_link
+from recipes.models import (Favorite, Ingredient, Link, Recipe, ShoppingCart,
+                            Tag)
 
 from .filters import FavoriteShoppingCartFilter, IngredientFilter, RecipeFilter
 from .permissions import IsAuthorOrReadOnly
-from .serializers import (ActionSerializer, IngredientSerializer,
-                          LinkSerializer, RecipeSerializer, TagSerializer)
+from .serializers import (IngredientSerializer, LinkSerializer,
+                          RecipeActionSerializer, RecipeSerializer,
+                          RecipeUpdateSerializer, TagSerializer)
 
 
 class TagViewSet(ReadOnlyModelViewSet):
@@ -53,27 +54,34 @@ class RecipeViewSet(ModelViewSet):
             self.permission_classes = (IsAuthorOrReadOnly,)
         return super().get_permissions()
 
-    def perform_create(self, serializer):
-        """Указывает текущего пользователя как автора при создании рецепта."""
-        recipe = serializer.save(author=self.request.user)
-        return recipe
+    def get_serializer_class(self):
+        """Устанавливает сериализатор обновления рецепта."""
+        if self.action == 'partial_update':
+            return RecipeUpdateSerializer
+        return super().get_serializer_class()
+
+    def partial_update(self, request, *args, **kwargs):
+        """Частично обновляет рецепт."""
+        kwargs['partial'] = False
+        return self.update(request, *args, **kwargs)
 
     def process_action(self, recipe, model, request):
         """Возвращает ответ при попытке добавить рецепт в список избранного
         или в спискок покупок, в зависмости от того, находится ли рецепт
         в соответствуюшем списке."""
-        obj, _ = model.objects.get_or_create(holder=request.user)
         if request.method == 'POST':
-            if recipe in obj.recipes.all():
+            obj, create = model.objects.get_or_create(
+                holder=request.user, recipe=recipe
+            )
+            if not create:
                 return Response(status=status.HTTP_400_BAD_REQUEST)
-            obj.recipes.add(recipe)
-            serializer = ActionSerializer(instance=recipe)
+            serializer = RecipeActionSerializer(instance=recipe)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        elif request.method == 'DELETE':
-            if recipe not in obj.recipes.all():
-                return Response(status=status.HTTP_400_BAD_REQUEST)
-            obj.recipes.remove(recipe)
-            return Response(status=status.HTTP_204_NO_CONTENT)
+        obj = model.objects.filter(holder=request.user, recipe=recipe)
+        if not obj.exists():
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        obj.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(('POST', 'DELETE',), detail=True)
     def favorite(self, request, *args, **kwargs):
@@ -88,9 +96,9 @@ class RecipeViewSet(ModelViewSet):
     @action(('GET',), detail=False)
     def download_shopping_cart(self, request, *args, **kwargs):
         """Возвращает текстовый файл со списком покупок."""
-        recipe_list = request.user.shopping_cart.recipes.all()
+        queryset = request.user.shopping_cart.all()
+        recipe_list = [item.recipe for item in queryset]
         shopping_cart = create_shopping_cart(recipe_list)
-        print(shopping_cart)
         response = FileResponse(shopping_cart, content_type='application/text')
         response['Content-Disposition'] = (
             'attachment; filename="shopping_cart.txt'

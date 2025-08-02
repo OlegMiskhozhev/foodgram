@@ -24,6 +24,7 @@ class Tag(models.Model):
     class Meta:
         verbose_name = 'тег'
         verbose_name_plural = 'Теги'
+        default_related_name = 'tag'
 
     def __str__(self):
         return self.slug
@@ -33,16 +34,23 @@ class Ingredient(models.Model):
     """Модель для ингредиентов."""
     name = models.CharField(
         'Название',
-        max_length=constants.INGREDIENT_NAME_LENGTH,
+        max_length=constants.INGREDIENT_NAME_LENGTH
     )
     measurement_unit = models.CharField(
         'Единицы измерения',
-        max_length=constants.MEASUREMENT_UNIT_LENGTH,
+        max_length=constants.MEASUREMENT_UNIT_LENGTH
     )
 
     class Meta:
         verbose_name = 'ингредиент'
         verbose_name_plural = 'Ингредиенты'
+        default_related_name = 'ingredient'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name', 'measurement_unit'],
+                name='unique_ingredient_with_unit'
+            ),
+        ]
 
     def __str__(self):
         return self.name
@@ -87,6 +95,7 @@ class Recipe(models.Model):
     class Meta:
         verbose_name = 'рецепт'
         verbose_name_plural = 'Рецепты'
+        default_related_name = 'recipes'
         ordering = ('-pub_date',)
 
     def __str__(self):
@@ -118,14 +127,15 @@ class RecipeIngredient(models.Model):
 
 class ActionModel(models.Model):
     """Базовая модель для списков подписок и покупок."""
-    holder = models.OneToOneField(
+    holder = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         verbose_name='Пользователь'
     )
-    recipes = models.ManyToManyField(
+    recipe = models.ForeignKey(
         Recipe,
-        verbose_name='Избранные рецепты'
+        on_delete=models.CASCADE,
+        verbose_name='Рецепт'
     )
 
     class Meta:
@@ -137,6 +147,13 @@ class Favorite(ActionModel):
     class Meta:
         verbose_name = 'избранное'
         verbose_name_plural = 'Избранное'
+        default_related_name = 'favorites'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['holder', 'recipe'],
+                name='unique_user_favorite'
+            ),
+        ]
 
     def __str__(self):
         return self.holder.username
@@ -148,6 +165,12 @@ class ShoppingCart(ActionModel):
         verbose_name = 'список покупок'
         verbose_name_plural = 'Списки покупок'
         default_related_name = 'shopping_cart'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['holder', 'recipe'],
+                name='unique_user_shopping_cart'
+            ),
+        ]
 
     def __str__(self):
         return self.holder.username
@@ -163,4 +186,4 @@ class Link(models.Model):
         verbose_name_plural = 'Ссылки'
 
     def __str__(self):
-        return self.holder.username
+        return self.short_link

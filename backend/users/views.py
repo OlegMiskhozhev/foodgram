@@ -8,7 +8,7 @@ from rest_framework.response import Response
 
 from backend.paginations import Pagination
 
-from .models import Subscription
+from .serializers import SubscribeCreateSerialaizer
 
 User = get_user_model()
 
@@ -75,15 +75,15 @@ class UserViewSet(UserViewSet):
     def subscribe(self, request, *args, **kwargs):
         """Обрабатывает запросы на подписку и удаление подписки
         текущего пользователя."""
-        if request.user == self.get_object():
-            return Response(status=status.HTTP_400_BAD_REQUEST)
         if request.method == 'POST':
-            subscription, create = Subscription.objects.get_or_create(
-                user=request.user,
-                subscribed_on=self.get_object()
+            serializer = SubscribeCreateSerialaizer(
+                data={
+                    'subscribed_on': self.get_object().id,
+                    'user': request.user.id
+                }
             )
-            if not create:
-                return Response(status=status.HTTP_400_BAD_REQUEST)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
             instance = self.get_subscription_instance(request).get(
                 subscribed_on=self.get_object()
             )

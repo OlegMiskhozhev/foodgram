@@ -17,6 +17,7 @@ class UserAdmin(BaseUserAdmin):
     add_fieldsets = BaseUserAdmin.add_fieldsets + (
         (None, {"fields": ['email', 'first_name', 'last_name']}),)
     list_display = (
+        'id',
         'username',
         'email',
         'first_name',

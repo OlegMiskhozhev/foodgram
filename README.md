@@ -259,6 +259,11 @@ docker exec foodgran-backend python manage.py migrate
 docker exec foodgran-backend python manage.py createsuperuser
 ```
 
+Для тестирования проекта можно заполнить таблицу ингредиентов из фикстуры:
+```console
+docker exec foodgran-backend python manage.py loaddata data/ingredients.json
+```
+
 Собрать файлы статики и скопировать их в паку, связанную с volume:
 ```console
 docker exec foodgram-backend python manage.py collectstatic
@@ -315,6 +320,11 @@ DATABASES = {
 ```console
 python manage.py migrate
 python manage.py createsuperuser
+```
+
+Для тестирования проекта можно заполнить таблицу ингредиентов из фикстуры:
+```console
+docker exec foodgran-backend python manage.py loaddata data/ingredients.json
 ```
 
 Запустить локальный сервер:

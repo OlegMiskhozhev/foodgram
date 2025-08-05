@@ -1,7 +1,9 @@
 from django.contrib.auth import get_user_model
 from djoser.serializers import UserCreateSerializer, UserSerializer
-from rest_framework.serializers import (PrimaryKeyRelatedField, Serializer,
+from rest_framework.serializers import (ModelSerializer,
+                                        PrimaryKeyRelatedField, Serializer,
                                         SerializerMethodField, ValidationError)
+from rest_framework.validators import UniqueTogetherValidator
 
 from backend.utils import Base64ImageField
 
@@ -88,7 +90,7 @@ class SubscribedUserSerialaizer(UserSerializer):
         if limit:
             try:
                 limit = int(limit)
-            except Exception:
+            except ValueError:
                 raise ValidationError('Некорректный запрос')
         queryset = obj.subscribed_on.recipes.all()
         serializer = RecipeSubscrubeSerializer(queryset[:limit], many=True)
@@ -103,4 +105,24 @@ class SubscribedUserSerialaizer(UserSerializer):
         data = user
         data['recipes'] = recipes
         data['recipes_count'] = recipes_count
+        return data
+
+
+class SubscribeCreateSerialaizer(ModelSerializer):
+
+    class Meta:
+        model = Subscription
+        fields = '__all__'
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Subscription.objects.all(),
+                fields=['user', 'subscribed_on'],
+                message='Вы уже подписаны на этого пользователя.'
+            )
+        ]
+
+    def validate(self, data):
+        if data['user'] == data['subscribed_on']:
+            raise ValidationError(
+                'Нельзя подписаться на самого себя.')
         return data

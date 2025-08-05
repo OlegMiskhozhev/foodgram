@@ -45,6 +45,7 @@ class Ingredient(models.Model):
         verbose_name = 'ингредиент'
         verbose_name_plural = 'Ингредиенты'
         default_related_name = 'ingredient'
+        ordering = ('name',)
         constraints = [
             models.UniqueConstraint(
                 fields=['name', 'measurement_unit'],
@@ -140,20 +141,20 @@ class ActionModel(models.Model):
 
     class Meta:
         abstract = True
+        constraints = [
+            models.UniqueConstraint(
+                fields=['holder', 'recipe'],
+                name='%(class)s_user_unique'
+            ),
+        ]
 
 
 class Favorite(ActionModel):
     """Модель для списков подписок."""
-    class Meta:
+    class Meta(ActionModel.Meta):
         verbose_name = 'избранное'
         verbose_name_plural = 'Избранное'
         default_related_name = 'favorites'
-        constraints = [
-            models.UniqueConstraint(
-                fields=['holder', 'recipe'],
-                name='unique_user_favorite'
-            ),
-        ]
 
     def __str__(self):
         return self.holder.username
@@ -161,16 +162,10 @@ class Favorite(ActionModel):
 
 class ShoppingCart(ActionModel):
     """Модель для списков покупок."""
-    class Meta:
+    class Meta(ActionModel.Meta):
         verbose_name = 'список покупок'
         verbose_name_plural = 'Списки покупок'
         default_related_name = 'shopping_cart'
-        constraints = [
-            models.UniqueConstraint(
-                fields=['holder', 'recipe'],
-                name='unique_user_shopping_cart'
-            ),
-        ]
 
     def __str__(self):
         return self.holder.username
